@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Agent Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .session-info {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-content {
+            background: #007bff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #007bff;
+        }
+
+        .send-btn, .clear-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .send-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .send-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quick-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .chat-container {
+                width: 95%;
+                height: 90vh;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .quick-actions {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🌤️ Weather Agent</h1>
+            <div class="session-info">Session ID: <span id="sessionId">Not connected</span></div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-content">
+                    Hello! I'm your weather assistant. I can help you with:
+                    <br>• Current weather for any city
+                    <br>• Weather comparisons between cities
+                    <br>• Remember our conversation history
+                    <br><br>Just ask me about the weather anywhere in the world!
+                </div>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            🤖 Agent is thinking...
+        </div>
+        
+        <div class="chat-input-container">
+            <div class="input-group">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Ask me about weather..." maxlength="500">
+                <button onclick="sendMessage()" id="sendBtn" class="send-btn">Send</button>
+                <button onclick="clearSession()" class="clear-btn">Clear</button>
+            </div>
+            
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="quickMessage('What is the weather in Chennai?')">Chennai Weather</button>
+                <button class="quick-btn" onclick="quickMessage('Compare weather between Mumbai, Delhi, and Bangalore')">Compare Cities</button>
+                <button class="quick-btn" onclick="quickMessage('What was my first question?')">First Question</button>
+                <button class="quick-btn" onclick="quickMessage('How many questions have I asked?')">Question Count</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        const API_BASE = 'http://localhost:8000';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+
+        function generateSessionId() {
+            return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        }
+
+        function updateSessionId(newSessionId) {
+            sessionId = newSessionId;
+            document.getElementById('sessionId').textContent = sessionId || 'Not connected';
+        }
+
+        function addMessage(content, isUser = false, timestamp = new Date()) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const timeStr = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">${content}</div>
+                <div class="message-time">${timeStr}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showLoading(show = true) {
+            const loading = document.getElementById('loading');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (show) {
+                loading.classList.add('show');
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Sending...';
+            } else {
+                loading.classList.remove('show');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        function showError(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = `Error: ${message}`;
+            messagesContainer.appendChild(errorDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage(message, true);
+            input.value = '';
+            
+            showLoading(true);
+            
+            try {
+                const requestBody = {
+                    query: message
+                };
+                
+                if (sessionId) {
+                    requestBody.session_id = sessionId;
+                }
+                
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update session ID if we got a new one
+                if (data.session_id && data.session_id !== sessionId) {
+                    updateSessionId(data.session_id);
+                }
+                
+                // Add bot response to chat
+                addMessage(data.response, false, new Date(data.timestamp));
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'Failed to send message. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function quickMessage(message) {
+            document.getElementById('chatInput').value = message;
+            sendMessage();
+        }
+
+        async function clearSession() {
+            if (!sessionId) {
+                // If no session, just clear the chat visually
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="message bot">
+                        <div class="message-content">
+                            Hello! I'm your weather assistant. I can help you with:
+                            <br>• Current weather for any city
+                            <br>• Weather comparisons between cities
+                            <br>• Remember our conversation history
+                            <br><br>Just ask me about the weather anywhere in the world!
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/clear/${sessionId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    // Clear the chat messages
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div class="message bot">
+                            <div class="message-content">
+                                Session cleared! I'm ready for a fresh conversation. How can I help you with weather information?
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Generate new session for next conversation
+                    sessionId = null;
+                    updateSessionId(null);
+                } else {
+                    throw new Error('Failed to clear session');
+                }
+            } catch (error) {
+                console.error('Error clearing session:', error);
+                showError('Failed to clear session. Please try again.');
+            }
+        }
+
+        // Test connection on page load
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    console.log('✅ Connected to Weather Agent API');
+                } else {
+                    throw new Error('Health check failed');
+                }
+            } catch (error) {
+                console.error('❌ Cannot connect to Weather Agent API:', error);
+                showError('Cannot connect to the weather service. Please make sure the API server is running on http://localhost:8000');
+            }
+        }
+
+        // Test connection when page loads
+        testConnection();
+    </script>
+</body>
+</html>
