@@ -158,6 +158,6 @@ This project is licensed under the **MIT License**.
 
 ## 👤 Author
 
-* \[Goutham Nivass] (Sr Ai Engineer)
+* \Goutham Nivass (Sr Ai Engineer)
 
 ---
