@@ -1,4 +1,4 @@
-# 🌤️ WeatherMind Agent: A FastAPI, Redis, and LangChain-Powered Conversational Weather Assistant
+# 🌤️ Weather Agent API with Redis & FastAPI
 
 ## 🔍 Overview
 
@@ -156,13 +156,8 @@ This project is licensed under the **MIT License**.
 
 ---
 
-## 👤 Authors
+## 👤 Author
 
-* \[Your Name] (Project Lead)
-* \[Contributors]
+* \[Goutham Nivass] (Sr Ai Engineer)
 
 ---
-
-## 📧 Contact
-
-For support or business inquiries, please contact \[[your-email@example.com](mailto:your-email@example.com)].
