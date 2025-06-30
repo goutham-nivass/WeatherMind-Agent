@@ -12,6 +12,9 @@
 This solution is ideal for both developers and end-users looking for a smart, responsive weather chatbot interface with modern AI capabilities.
 
 ---
+Work Flow 🧠
+
+
 ![Weather_agent](https://github.com/user-attachments/assets/02f8d165-0151-475d-9f67-83a5b15e00f4)
 
 
